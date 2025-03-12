@@ -5,7 +5,7 @@ If you want to use a preset in your configuration, use this as an example for yo
 
 ```
 {
-    "extends": "github>konflux-ci/mintmaker-presets:cve-automerge-critical"
+    "extends": ["github>konflux-ci/mintmaker-presets:cve-automerge-critical"]
 }
 ```
 
