@@ -30,7 +30,36 @@ jobs:
         preset: ${{ fromJson(needs.discover.outputs.presets) }}
     steps:
       - uses: actions/checkout@v6
+      # Inline validator (same image/command as renovate-config-validator-action)
+      # so we can capture WARN lines and emit GitHub annotations.
       - name: Validate ${{ matrix.preset }}
-        uses: konflux-ci/renovate-config-validator-action@main
-        with:
-          config_file: ${{ matrix.preset }}
+        env:
+          PRESET: ${{ matrix.preset }}
+        run: |
+          set -euo pipefail
+          IMAGE=quay.io/konflux-ci/mintmaker-renovate-image:latest
+          config_path="${GITHUB_WORKSPACE}/${PRESET}"
+
+          if command -v podman >/dev/null 2>&1; then
+            RUNTIME=podman
+            MOUNT_OPTS="ro,Z"
+          else
+            RUNTIME=docker
+            MOUNT_OPTS="ro"
+          fi
+
+          set +e
+          output="$($RUNTIME run --rm \
+            -v "${config_path}:/workspace/renovate.json:${MOUNT_OPTS}" \
+            "$IMAGE" \
+            renovate-config-validator /workspace/renovate.json 2>&1)"
+          exit_code=$?
+          set -e
+
+          printf '%s\n' "$output"
+
+          if printf '%s\n' "$output" | grep -q 'WARN:'; then
+            echo "::warning file=${PRESET},title=Renovate config validation::Validation reported warnings for ${PRESET}. See the job log for details."
+          fi
+
+          exit "${exit_code}"
