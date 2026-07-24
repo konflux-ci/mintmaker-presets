@@ -1,0 +1,37 @@
+name: Validate presets
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    outputs:
+      presets: ${{ steps.list.outputs.presets }}
+    steps:
+      - uses: actions/checkout@v6
+      - id: list
+        name: List preset JSON files
+        run: |
+          presets=$(ls *.json | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          echo "presets=$presets" >> "$GITHUB_OUTPUT"
+          echo "Found presets: $presets"
+
+  validate:
+    needs: discover
+    runs-on: ubuntu-latest
+    name: Validate presets
+    strategy:
+      fail-fast: false
+      matrix:
+        preset: ${{ fromJson(needs.discover.outputs.presets) }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Validate ${{ matrix.preset }}
+        uses: konflux-ci/renovate-config-validator-action@main
+        with:
+          config_file: ${{ matrix.preset }}
+          strict: true
