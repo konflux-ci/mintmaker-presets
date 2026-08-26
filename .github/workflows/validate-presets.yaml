@@ -12,7 +12,7 @@ jobs:
     outputs:
       presets: ${{ steps.list.outputs.presets }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
       - id: list
         name: List preset JSON files
         run: |
@@ -29,9 +29,9 @@ jobs:
       matrix:
         preset: ${{ fromJson(needs.discover.outputs.presets) }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
       - name: Validate ${{ matrix.preset }}
-        uses: konflux-ci/renovate-config-validator-action@main
+        uses: konflux-ci/renovate-config-validator-action@1891cfbf5e12443366e799383d6b8141310883b8 # main
         with:
           config_file: ${{ matrix.preset }}
           strict: true
